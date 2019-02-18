@@ -439,3 +439,11 @@ class AccountInvoice(models.Model):
                     'nfe_protocol_number': protNFe["nfe_protocol_number"],
                 })
         return True
+
+    @api.multi
+    def action_move_create(self):
+        for inv in self:
+            if inv.type in ['in_invoice', 'in_refund'] or \
+                    inv.type in ['out_invoice', 'out_refund'] and \
+                    inv.state in ['open', 'paid']:
+                super(AccountInvoice, inv).action_move_create()
