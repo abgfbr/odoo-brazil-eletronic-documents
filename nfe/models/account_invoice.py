@@ -23,7 +23,7 @@ import datetime
 
 from openerp.tools.translate import _
 from openerp import models, fields, api
-from openerp.exceptions import RedirectWarning
+from openerp.exceptions import RedirectWarning, Warning
 
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
 from openerp.addons.nfe.sped.nfe.validator.xml import XMLValidator
@@ -125,6 +125,7 @@ class AccountInvoice(models.Model):
     def action_invoice_send_nfe(self):
 
         for inv in self:
+            self._validate_previous_sequences(inv)
 
             event_obj = self.env['l10n_br_account.document_event']
             event = max(
@@ -220,6 +221,19 @@ class AccountInvoice(models.Model):
                     'nfe_protocol_number': protNFe["nfe_protocol_number"],
                 })
         return True
+
+    def _validate_previous_sequences(self, inv):
+        nfes_previas = self.env["account.invoice"].search([
+            ("internal_number", ">=", int(inv.internal_number) - 5),
+            ("internal_number", "<", inv.internal_number),
+            ("type", "in", ["out_invoice", "out_refund"]),
+            ("state", "in", ["open", "cancel"])
+        ])
+        if len(nfes_previas) < 5:
+            raise Warning(
+                "Existem notas com numeração menor que desta nota que "
+                "não foram transmitidas para a SEFAZ!"
+            )
 
     @api.multi
     def button_cancel(self):
