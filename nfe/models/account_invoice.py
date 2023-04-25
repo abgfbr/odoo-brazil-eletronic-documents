@@ -255,37 +255,15 @@ class AccountInvoice(models.Model):
                 # evento.infDeclaracaoPrestacaoServico.Id = id_note
                 # evento.Signature.URI = id_note
 
-                arquivo = tempfile.NamedTemporaryFile()
-                arquivo.seek(0)
-                arquivo.write(
-                    base64.decodestring(self.company_id.nfe_a1_file)
-                )
-                arquivo.flush()
-
-                certificado = Certificado()
-                certificado.arquivo = arquivo.name
-                certificado.senha = self.company_id.nfe_a1_password
-                certificado.prepara_certificado_arquivo_pfx()
-
-                caminho_temporario = '/tmp/'
-
-                nome_arq_chave = caminho_temporario + uuid4().hex
-                arq_tmp = open(nome_arq_chave, 'w', encoding='utf-8')
-                arq_tmp.write(certificado.chave.decode('utf-8'))
-                arq_tmp.close()
-
-                nome_arq_certificado = caminho_temporario + uuid4().hex
-                arq_tmp = open(nome_arq_certificado, 'w', encoding='utf-8')
-                arq_tmp.write(certificado.certificado)
-                arq_tmp.close()
-
-                evento = evento[0]['nfse']
-                evento.xml_assinado = certificado.assina_xmlnfe(evento)
+                evento, nome_arq_certificado, nome_arq_chave = self.sign_nfse_document(
+                    evento)
 
                 data = '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:nfse="http://nfse.abrasf.org.br"><SOAP-ENV:Body><nfse:GerarNfse><nfseCabecMsg><cabecalho versao="1.00" xmlns="http://www.abrasf.org.br/nfse.xsd"><versaoDados>2.04</versaoDados></cabecalho></nfseCabecMsg><nfseDadosMsg>{}</nfseDadosMsg></nfse:GerarNfse></SOAP-ENV:Body></SOAP-ENV:Envelope>'.format(evento.xml)
 
+                url_server = self.get_nfse_url_server(inv)
+
                 resp = requests.post(
-                    'https://www.issnetonline.com.br/apresentacao/df/webservicenfse204/nfse.asmx',
+                    url_server,
                     data=data,
                     headers={
                         'Content-Type': 'application/soap+xml',
@@ -309,7 +287,7 @@ class AccountInvoice(models.Model):
                             "datas_fname": file_name,
                             "res_model": inv._name,
                             "res_id": inv.id,
-                            "datas": base64.b64encode(ET.tostring(nfse_return_xml.getroot(), encoding='utf-8').encode('utf-8')),
+                            "datas": base64.b64encode(xml_data),
                             "mimetype": "application/xml",
                         }
                         attachment = self.env["ir.attachment"]
@@ -321,6 +299,36 @@ class AccountInvoice(models.Model):
                             resp.text))
 
         return True
+
+    def get_nfse_url_server(self, inv):
+        url_server = 'https://www.issnetonline.com.br/apresentacao/df/webservicenfse204/nfse.asmx'
+        if inv.company_id.nfe_environment == '1':
+            url_server = 'https://df.issnetonline.com.br/webservicenfse204/nfse.asmx'
+        return url_server
+
+    def sign_nfse_document(self, evento):
+        arquivo = tempfile.NamedTemporaryFile()
+        arquivo.seek(0)
+        arquivo.write(
+            base64.decodestring(self.company_id.nfe_a1_file)
+        )
+        arquivo.flush()
+        certificado = Certificado()
+        certificado.arquivo = arquivo.name
+        certificado.senha = self.company_id.nfe_a1_password
+        certificado.prepara_certificado_arquivo_pfx()
+        caminho_temporario = '/tmp/'
+        nome_arq_chave = caminho_temporario + uuid4().hex
+        arq_tmp = open(nome_arq_chave, 'w', encoding='utf-8')
+        arq_tmp.write(certificado.chave.decode('utf-8'))
+        arq_tmp.close()
+        nome_arq_certificado = caminho_temporario + uuid4().hex
+        arq_tmp = open(nome_arq_certificado, 'w', encoding='utf-8')
+        arq_tmp.write(certificado.certificado)
+        arq_tmp.close()
+        evento = evento[0]['nfse']
+        evento.xml_assinado = certificado.assina_xmlnfe(evento)
+        return evento, nome_arq_certificado, nome_arq_chave
 
     def _validate_previous_sequences(self, inv):
         nfes_previas = self.env["account.invoice"].search([
@@ -348,38 +356,16 @@ class AccountInvoice(models.Model):
                     self.env.cr, self.env.uid, self.ids,
                     int(inv.company_id.nfe_environment), self.env.context)
 
-                arquivo = tempfile.NamedTemporaryFile()
-                arquivo.seek(0)
-                arquivo.write(
-                    base64.decodestring(self.company_id.nfe_a1_file)
-                )
-                arquivo.flush()
-
-                certificado = Certificado()
-                certificado.arquivo = arquivo.name
-                certificado.senha = self.company_id.nfe_a1_password
-                certificado.prepara_certificado_arquivo_pfx()
-
-                caminho_temporario = '/tmp/'
-
-                nome_arq_chave = caminho_temporario + uuid4().hex
-                arq_tmp = open(nome_arq_chave, 'w', encoding='utf-8')
-                arq_tmp.write(certificado.chave.decode('utf-8'))
-                arq_tmp.close()
-
-                nome_arq_certificado = caminho_temporario + uuid4().hex
-                arq_tmp = open(nome_arq_certificado, 'w', encoding='utf-8')
-                arq_tmp.write(certificado.certificado)
-                arq_tmp.close()
-
-                evento = evento[0]['nfse']
-                evento.xml_assinado = certificado.assina_xmlnfe(evento)
+                evento, nome_arq_certificado, nome_arq_chave = self.sign_nfse_document(
+                    evento)
 
                 data = '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:nfse="http://nfse.abrasf.org.br"><SOAP-ENV:Body><nfse:CancelarNfse><nfseCabecMsg><cabecalho versao="1.00" xmlns="http://www.abrasf.org.br/nfse.xsd"><versaoDados>2.04</versaoDados></cabecalho></nfseCabecMsg><nfseDadosMsg>{}</nfseDadosMsg></nfse:CancelarNfse></SOAP-ENV:Body></SOAP-ENV:Envelope>'.format(
                     evento.xml)
 
+                url_server = self.get_nfse_url_server(inv)
+
                 resp = requests.post(
-                    'https://www.issnetonline.com.br/apresentacao/df/webservicenfse204/nfse.asmx',
+                    url_server,
                     data=data,
                     headers={
                         'Content-Type': 'application/soap+xml',
@@ -625,3 +611,13 @@ class AccountInvoice(models.Model):
                     inv.type in ['out_invoice', 'out_refund'] and \
                     inv.state in ['open', 'paid']:
                 super(AccountInvoice, inv).action_move_create()
+
+    @api.multi
+    def action_cancel_draft(self):
+        for inv in self:
+            if inv.nfe_access_key:
+                raise Warning(
+                    "Não é possível retornar para rascunho uma nota que foi transmitida!"
+                )
+
+        return super(AccountInvoice, self).action_cancel_draft()
