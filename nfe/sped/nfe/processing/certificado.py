@@ -24,10 +24,8 @@ import base64
 import logging
 _logger = logging.getLogger(__name__)
 
-try:
-    from pysped.xml_sped.certificado import Certificado as PySpedCertificado
-except ImportError as exc:
-    logging.exception(exc.message)
+
+from pysped.xml_sped.certificado import Certificado as PySpedCertificado
 
 
 class Certificado(PySpedCertificado):
