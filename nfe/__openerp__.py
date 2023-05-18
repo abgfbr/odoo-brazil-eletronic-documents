@@ -40,6 +40,7 @@
     """,
     'depends': [
         'l10n_br_account_product',
+        'report_py3o',
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -52,6 +53,7 @@
         'views/res_partner_view.xml',
         'views/res_company_view.xml',
         'report/report_print_button_view.xml',
+        'report/danse_report.xml',
     ],
     'demo': [],
     'test': [],

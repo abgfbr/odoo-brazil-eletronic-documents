@@ -1,0 +1,28 @@
+<openerp>
+    <data>
+
+        <report
+                id="danse_py3o_report"
+                string="DANSE"
+                model="account.invoice"
+                report_type="py3o"
+                name="nfe.report_danse"
+        />
+
+        <record id="py3o_template_danse" model="py3o.template">
+            <field name="name">danse-report</field>
+            <field name="filetype">odt</field>
+            <field name="py3o_template_data" type="base64"
+                   file="nfe/data/danse.odt"></field>
+        </record>
+
+        <record id="danse_py3o_report" model="ir.actions.report.xml">
+            <field name="module">nfe</field>
+            <field name="py3o_fusion_filetype"
+                   ref="report_py3o.py3o_fusion_filetype_pdf"/>
+            <field name="py3o_template_fallback">nfe/data/danse.odt</field>
+            <field name="py3o_template_id" ref="py3o_template_danse"/>
+        </record>
+
+    </data>
+</openerp>
