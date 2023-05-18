@@ -488,10 +488,16 @@ class AccountInvoice(models.Model):
         return
 
     @api.multi
+    def invoice_nfse_print(self):
+        return self.env['report'].get_action(
+            self, "nfe.report_danse")
+
+    @api.multi
     def invoice_print(self):
 
         for inv in self:
-
+            if inv.nfe_version == 'abrasfdf':
+                return self.invoice_nfse_print()
             document_serie_id = inv.document_serie_id
             fiscal_document_id = inv.document_serie_id.fiscal_document_id
             electronic = inv.document_serie_id.fiscal_document_id.electronic
