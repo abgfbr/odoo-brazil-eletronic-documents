@@ -59,6 +59,7 @@ def analytic_report(pool, cr, uid, local_context, context):
         "pis": format_money_mask(invoice.pis_value_wh),
         "cofins": format_money_mask(invoice.cofins_value_wh),
         "inss": format_money_mask(invoice.inss_value_wh),
+        "irrf": format_money_mask(invoice.irrf_value_wh),
         "csll": format_money_mask(invoice.csll_value_wh),
         "iss_retido_valor": format_money_mask(invoice.issqn_value_wh),
         "total_liquido": format_money_mask(invoice.amount_net),
