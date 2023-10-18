@@ -50,7 +50,7 @@ def analytic_report(pool, cr, uid, local_context, context):
         "descricao_servico": invoice.invoice_line.fiscal_comment,
         "servico_code": invoice.invoice_line.product_id.service_type_id.code,
         "servico_code_formated": invoice.invoice_line.product_id.service_type_id.code.replace(".", ""),
-        "servico_desc": invoice.invoice_line.product_id.service_type_id.name,
+        "servico_desc": "{0:.150}".format(invoice.invoice_line.product_id.service_type_id.name),
         "aliquota_iss": str(invoice.invoice_line.issqn_percent).replace(".",","),
         "cnae": invoice.company_id.cnae_main_id.code.replace("-", "").replace("/", ""),
         "total_bruto": format_money_mask(invoice.amount_total),
