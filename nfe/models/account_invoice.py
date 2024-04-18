@@ -347,7 +347,6 @@ class AccountInvoice(models.Model):
     def action_cancel(self):
         payment_line_obj = self.env['payment.line']
         for inv in self:
-            res = super(AccountInvoice, self).action_cancel()
             if inv.nfe_version == 'abrasfdf' and inv.state == 'open':
                 from openerp.addons.l10n_br_account_product.sped.nfe.document \
                     import NFSeDFCancelamento
@@ -382,6 +381,7 @@ class AccountInvoice(models.Model):
                     if "ListaMensagemRetorno" in resp.text:
                         raise Warning(resp.text)
 
+            res = super(AccountInvoice, self).action_cancel()
             return res
 
 
